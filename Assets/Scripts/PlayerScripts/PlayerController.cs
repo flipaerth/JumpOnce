@@ -53,6 +53,11 @@
  *  - When unlocked, allows the player to die an additional time
  *  - Upon death, other mechanics (jump, dash, shoot) are reset and allow the player to do them a 'second' time
  *  
+ * 5. You Can Only Wall Jump Once
+ * 6. You Can Only Get Hit Once
+ * 7. You Can Only Stop Time Once
+ * 8. You Can Only Slide Once
+ *  
  */
 
 
