@@ -75,11 +75,21 @@ public class PlayerController : MonoBehaviour
     private float moveHorizontal;
     private float moveSpeed = 10;
 
-    public float jumpStrength = 7.5f;
+    // Jump Variables
+    public float jumpStrength;
+    public float wallJumpStrength;
+
+    private float jumpTimeCounter;
+    public float jumpTime;
+
+    // Coyote Time Variables
+    //private float coyoteTime = 0.2f;
+    //private float coyoteTimeCounter;
 
     // Position Variables
     public bool isGrounded; // True when on the ground
     public bool wallTouch; // True when touching the wall
+    public bool isJumping; // True while in the air
 
     // Action Variables
     public bool canJump; // Start with one jump
@@ -106,10 +116,10 @@ public class PlayerController : MonoBehaviour
 
         isGrounded = false;
         wallTouch = false;
+        isJumping = false;
     }
 
-    // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
         // Gets Unity's left and right horizontal input - Axis is a scale of -1 (left) to 1 (right)
         moveHorizontal = Input.GetAxisRaw("Horizontal");
@@ -123,24 +133,48 @@ public class PlayerController : MonoBehaviour
         vel.y = myRigidBody.velocity.y;
         // Sets the velocities for the rigidbody
         myRigidBody.velocity = vel;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
 
         // Checks if the jump key is pressed, while also checking if the player can jump
-        if (Input.GetKeyDown(KeyCode.Space) == true && canJump == true && isGrounded == true)
+        if (Input.GetKeyDown(KeyCode.Space) == true && canJump == true && isGrounded == true && wallTouch == false)
         {
+            isJumping = true;
+            jumpTimeCounter = jumpTime;
+
             myRigidBody.velocity = Vector2.up * jumpStrength;
             Debug.Log("jump key pressed.");
-            canJump = false;
+            //canJump = false;
             Debug.Log("Player has jumnped once.");
         }
 
         // Checks for wall jumping
         if (Input.GetKeyDown(KeyCode.Space) == true && canWallJump == true)
         {
-            myRigidBody.velocity = Vector2.up * jumpStrength;
+            myRigidBody.velocity = Vector2.up * wallJumpStrength;
             Debug.Log("jump key pressed.");
             canWallJump = false;
             wallJumped = true;
             Debug.Log("Player has wall jumnped once.");
+        }
+
+        if (Input.GetKey(KeyCode.Space) && isJumping == true)
+        {
+            if(jumpTimeCounter > 0)
+            {
+                myRigidBody.velocity = Vector2.up * jumpStrength;
+                jumpTimeCounter -= Time.deltaTime;
+            } else
+            {
+                isJumping = false;
+            }
+        }
+        if (Input.GetKeyUp(KeyCode.Space))
+        {
+            isJumping = false;
         }
     }
 
