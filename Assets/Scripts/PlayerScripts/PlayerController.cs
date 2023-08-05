@@ -77,16 +77,19 @@ public class PlayerController : MonoBehaviour
 
     public float jumpStrength = 7.5f;
 
+    // Position Variables
+    public bool isGrounded; // True when on the ground
+    public bool wallTouch; // True when touching the wall
+
     // Action Variables
     public bool canJump; // Start with one jump
     public bool canWallJump; // True when on the wall
+    public bool wallJumped; // True when jumping from the wall
 
     public bool canDash; // Start with one dash
     public bool canShoot; // Start with one bullet
     public bool canDie; // Start with one life
     public bool canGetHit; // Start with one hit
-
-    public bool isGrounded; // True when on the ground
 
 
     // Start is called before the first frame update
@@ -94,6 +97,7 @@ public class PlayerController : MonoBehaviour
     {
         canJump = true;
         canWallJump = false;
+        wallJumped = false;
 
         canDash = false;
         canShoot = false;
@@ -101,6 +105,7 @@ public class PlayerController : MonoBehaviour
         canGetHit = false;
 
         isGrounded = false;
+        wallTouch = false;
     }
 
     // Update is called once per frame
@@ -127,6 +132,16 @@ public class PlayerController : MonoBehaviour
             canJump = false;
             Debug.Log("Player has jumnped once.");
         }
+
+        // Checks for wall jumping
+        if (Input.GetKeyDown(KeyCode.Space) == true && canWallJump == true)
+        {
+            myRigidBody.velocity = Vector2.up * jumpStrength;
+            Debug.Log("jump key pressed.");
+            canWallJump = false;
+            wallJumped = true;
+            Debug.Log("Player has wall jumnped once.");
+        }
     }
 
     void OnTriggerEnter2D(Collider2D collision)
@@ -135,6 +150,15 @@ public class PlayerController : MonoBehaviour
         {
             isGrounded = true;
         }
+
+        if (collision.gameObject.tag == "Wall")
+        {
+            wallTouch = true;
+            if (wallTouch == true && wallJumped == false)
+            {
+                canWallJump = true;
+            }
+        }
     }
 
     private void OnTriggerExit2D(Collider2D collision)
@@ -142,6 +166,15 @@ public class PlayerController : MonoBehaviour
         if (collision.gameObject.tag == "Ground")
         {
             isGrounded = false;
+        }
+
+        if (collision.gameObject.tag == "Wall")
+        {
+            wallTouch = false;
+            if (wallTouch == false || wallJumped == true)
+            {
+                canWallJump = false;
+            }
         }
     }
 }
