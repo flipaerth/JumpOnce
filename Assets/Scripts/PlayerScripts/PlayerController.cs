@@ -8,7 +8,7 @@
  * 2. Jump -> space key {DONE}
  *  - Jump moves the character up (duh)
  *  
- *  - Simulate gravity but with 'tricks'
+ *  - Simulate gravity but with 'tricks' {DONE}
  *      - Speed decreases at the apex of the jump
  *      - Speed increases back towards the ground after the apex of the jump
  *          - Fall Speed
@@ -19,16 +19,13 @@
  *          - The shorter the jump key is held, the smaller the jump
  *              - Variable jump height
  *              
- *  - Jump buffering
+ *  - Jump buffering 
  *      - Not necessary for the theme of only jumping once, but could be cool to include as a mechanic later on
  *      - Queue another jump while jumping for a 'snappier' feel of jumping
  *      
- *  - Coyote Jump
+ *  - Coyote Jump {DONE}
  *      - Being able to jump after leaving a platform for a few miliseconds
  *      - Need a 'grounded' threshold to track when the player can jump
- *      
- *  - Clamped Fall Speed
- *      - 
  *  
  *  - Edge Detection
  *      - If jumping underneath an edge, nudges the player slightly into the direction they intended to go
@@ -64,6 +61,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
@@ -83,21 +81,31 @@ public class PlayerController : MonoBehaviour
     public float jumpStrength;
     public float wallJumpStrength;
 
+    // Original Variable Jump
+    /*
     private float jumpTimeCounter;
     public float jumpTime;
+    */
 
-    public float fallSpeed = 5f;
-    public float lowJumpSpeed = 5f;
+    // Variable Jump
+    private float fallSpeed = 5f;
+    private float lowJumpSpeed = 5f;
+
+    // Apex of Jump - Better Control
+    private float jumpApexThreshold = 10f;
+    private float apexPoint;
+    private float minFallSpeed = 5f;
+    private float maxFallSpeed = 15f;
 
     // Coyote Time Variables
-    //private float coyoteTime = 0.2f;
-    //private float coyoteTimeCounter;
+    public float coyoteTime = 0.15f;
+    private float coyoteTimeCounter;
 
     // Position Variables
     [Header("Position Variables")]
     public bool isGrounded; // True when on the ground
     public bool wallTouch; // True when touching the wall
-    public bool isJumping; // True while in the air
+    //public bool isJumping; // True while in the air
 
     // Action Variables
     [Header("Action Variables")]
@@ -125,9 +133,10 @@ public class PlayerController : MonoBehaviour
 
         isGrounded = false;
         wallTouch = false;
-        isJumping = false;
+        //isJumping = false;
     }
 
+    // Fixed Update runs at the same framerate as the physics engine
     void FixedUpdate()
     {
         // Gets Unity's left and right horizontal input - Axis is a scale of -1 (left) to 1 (right)
@@ -151,6 +160,8 @@ public class PlayerController : MonoBehaviour
         vel.y = myRigidBody.velocity.y;
         // Sets the velocities for the rigidbody
         myRigidBody.velocity = vel;
+
+        CalculateJumpApex();
     }
 
     // Update is called once per frame
@@ -165,16 +176,19 @@ public class PlayerController : MonoBehaviour
             myRigidBody.velocity += Vector2.up * Physics2D.gravity.y * (lowJumpSpeed - 1) * Time.deltaTime;
         }
 
-        // Checks if the jump key is pressed, while also checking if the player can jump
-        if (Input.GetKeyDown(KeyCode.Space) == true && canJump == true && isGrounded == true && wallTouch == false)
+        if (isGrounded == true || coyoteTimeCounter > 0)
         {
-            //isJumping = true;
-            //jumpTimeCounter = jumpTime;
+            // Checks if the jump key is pressed, while also checking if the player can jump
+            if (Input.GetKeyDown(KeyCode.Space) == true && canJump == true && wallTouch == false)
+            {
+                //isJumping = true;
+                //jumpTimeCounter = jumpTime;
 
-            myRigidBody.velocity = Vector2.up * jumpStrength;
-            Debug.Log("jump key pressed.");
-            //canJump = false;
-            Debug.Log("Player has jumnped once.");
+                myRigidBody.velocity = Vector2.up * jumpStrength;
+                Debug.Log("jump key pressed.");
+                //canJump = false;
+                Debug.Log("Player has jumnped once.");
+            }
         }
 
         // Checks for wall jumping
@@ -185,6 +199,16 @@ public class PlayerController : MonoBehaviour
             canWallJump = false;
             //wallJumped = true;
             Debug.Log("Player has wall jumnped once.");
+        }
+
+        // Coyote Time
+        if (isGrounded == true)
+        {
+            coyoteTimeCounter = coyoteTime;
+        }
+        else
+        {
+            coyoteTimeCounter -= Time.deltaTime;
         }
 
         /*
@@ -238,6 +262,20 @@ public class PlayerController : MonoBehaviour
             {
                 canWallJump = false;
             }
+        }
+    }
+
+    private void CalculateJumpApex()
+    {
+        if (!isGrounded)
+        {
+            // Gets stronger the closer to the top of the jump
+            apexPoint = Mathf.InverseLerp(jumpApexThreshold, 0, Mathf.Abs(myRigidBody.velocity.y));
+            fallSpeed = Mathf.Lerp(minFallSpeed, maxFallSpeed, apexPoint);
+        }
+        else
+        {
+            apexPoint = 0;
         }
     }
 
