@@ -5,7 +5,7 @@
  *  - Movement needs to be "tight" and "snappy"
  *  - Movement stops when key is released with a slight 'last step' or 'slide' in either last pressed direction
  * 
- * 2. Jump -> space key
+ * 2. Jump -> space key {DONE}
  *  - Jump moves the character up (duh)
  *  
  *  - Simulate gravity but with 'tricks'
@@ -13,7 +13,7 @@
  *      - Speed increases back towards the ground after the apex of the jump
  *          - Fall Speed
  *          
- *  - Jump variation
+ *  - Jump variation {DONE}
  *      - Length of key press determines height of jump
  *          - The longer the jump key is held, the bigger the jump
  *          - The shorter the jump key is held, the smaller the jump
@@ -75,23 +75,32 @@ public class PlayerController : MonoBehaviour
     private float moveHorizontal;
     private float moveSpeed = 10;
 
+    // Sprite Bool
+    private bool facingRight = true;
+
     // Jump Variables
+    [Header("Jump Variables")]
     public float jumpStrength;
     public float wallJumpStrength;
 
     private float jumpTimeCounter;
     public float jumpTime;
 
+    public float fallSpeed = 5f;
+    public float lowJumpSpeed = 5f;
+
     // Coyote Time Variables
     //private float coyoteTime = 0.2f;
     //private float coyoteTimeCounter;
 
     // Position Variables
+    [Header("Position Variables")]
     public bool isGrounded; // True when on the ground
     public bool wallTouch; // True when touching the wall
     public bool isJumping; // True while in the air
 
     // Action Variables
+    [Header("Action Variables")]
     public bool canJump; // Start with one jump
     public bool canWallJump; // True when on the wall
     public bool wallJumped; // True when jumping from the wall
@@ -124,6 +133,15 @@ public class PlayerController : MonoBehaviour
         // Gets Unity's left and right horizontal input - Axis is a scale of -1 (left) to 1 (right)
         moveHorizontal = Input.GetAxisRaw("Horizontal");
 
+        // Flipping the sprite left or right based on movement
+        if (moveHorizontal > 0 && !facingRight) // Checks if going right and facing left to flip the character
+        {
+            flip();
+        } else if (moveHorizontal < 0 && facingRight) // Checks if going left and facing right to flip the character
+        {
+            flip();
+        }
+
         // Creates The Vector Variable vel - Vector2 is an X and Y axis
         Vector2 vel = new Vector2();
 
@@ -138,12 +156,20 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        // Variable Jump Height + adjustment to jump height (low jump speed) and fall speed
+        if (myRigidBody.velocity.y < 0)
+        {
+            myRigidBody.velocity += Vector2.up * Physics2D.gravity.y * (fallSpeed - 1) * Time.deltaTime;
+        } else if (myRigidBody.velocity.y > 0 && !Input.GetKey(KeyCode.Space))
+        {
+            myRigidBody.velocity += Vector2.up * Physics2D.gravity.y * (lowJumpSpeed - 1) * Time.deltaTime;
+        }
 
         // Checks if the jump key is pressed, while also checking if the player can jump
         if (Input.GetKeyDown(KeyCode.Space) == true && canJump == true && isGrounded == true && wallTouch == false)
         {
-            isJumping = true;
-            jumpTimeCounter = jumpTime;
+            //isJumping = true;
+            //jumpTimeCounter = jumpTime;
 
             myRigidBody.velocity = Vector2.up * jumpStrength;
             Debug.Log("jump key pressed.");
@@ -157,10 +183,12 @@ public class PlayerController : MonoBehaviour
             myRigidBody.velocity = Vector2.up * wallJumpStrength;
             Debug.Log("jump key pressed.");
             canWallJump = false;
-            wallJumped = true;
+            //wallJumped = true;
             Debug.Log("Player has wall jumnped once.");
         }
 
+        /*
+        // Checks the jumping and applies variable jump based on key press duration
         if (Input.GetKey(KeyCode.Space) && isJumping == true)
         {
             if(jumpTimeCounter > 0)
@@ -176,6 +204,7 @@ public class PlayerController : MonoBehaviour
         {
             isJumping = false;
         }
+        */
     }
 
     void OnTriggerEnter2D(Collider2D collision)
@@ -210,5 +239,15 @@ public class PlayerController : MonoBehaviour
                 canWallJump = false;
             }
         }
+    }
+
+    void flip()
+    {
+        Vector3 currentScale = gameObject.transform.localScale;
+        // Positive 1 faces right, Negative 1 faces left
+        currentScale.x *= -1;
+        gameObject.transform.localScale = currentScale;
+
+        facingRight = !facingRight;
     }
 }
